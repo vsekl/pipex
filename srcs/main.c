@@ -6,7 +6,7 @@
 /*   By: vjose <vjose@student.21-school.ru>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2022/01/07 19:09:42 by vjose             #+#    #+#             */
-/*   Updated: 2022/01/07 20:17:46 by vjose            ###   ########.fr       */
+/*   Updated: 2022/04/12 19:32:50 by vjose            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -105,26 +105,42 @@ static void	free_pipex(t_pipex *pipex)
 int	main(int argc, char **argv, char **envp)
 {
 	t_pipex	pipex;
+	pid_t	pid1;
+	pid_t	pid2;
+	int		status;
 
 	if (argc != 5)
 		error_wrong_args();
 	init_vars(&pipex, argv, envp);
-	pipex.pid = fork();
-	wait(NULL);
-	if (pipex.pid == 0)
+	pid1 = fork();
+	if (pid1 == 0)
 	{
 		close(pipex.fd[0]);
 		dup2(pipex.fd_in, 0);
 		dup2(pipex.fd[1], 1 );
+		close(pipex.fd[1]);
+		close(pipex.fd_in);
+		close(pipex.fd_out);
 		cmd_1(&pipex, envp);
+		exit(0);
 	}
-	else
+	pid2 = fork();
+	if (pid2 == 0)
 	{
 		close(pipex.fd[1]);
 		dup2(pipex.fd[0], 0);
 		dup2(pipex.fd_out, 1 );
+		close(pipex.fd[0]);
+		close(pipex.fd_in);
+		close(pipex.fd_out);
 		cmd_2(&pipex, envp);
+		exit(0);
 	}
+	close(pipex.fd[0]);
+	close(pipex.fd[1]);
+	pipex.pid = waitpid(-1, &status, 0);
+	pipex.pid = waitpid(-1, &status, 0);
 	free_pipex(&pipex);
 	return (0);
 }
+
